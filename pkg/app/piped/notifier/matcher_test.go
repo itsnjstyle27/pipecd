@@ -491,6 +491,62 @@ func TestMatch(t *testing.T) {
 				}: true,
 			},
 		},
+		{
+			name:   "a label with an empty value is not ignored by default",
+			config: config.NotificationRoute{},
+			matchings: map[model.NotificationEvent]bool{
+				{
+					Type: model.NotificationEventType_EVENT_DEPLOYMENT_TRIGGERED,
+					Metadata: &model.NotificationEventDeploymentTriggered{
+						Deployment: &model.Deployment{
+							Labels: map[string]string{
+								"team": "",
+							},
+						},
+					},
+				}: true,
+			},
+		},
+		{
+			name: "a label with an empty value is not ignored by other ignoreLabels",
+			config: config.NotificationRoute{
+				IgnoreLabels: map[string]string{
+					"env": "local",
+				},
+			},
+			matchings: map[model.NotificationEvent]bool{
+				{
+					Type: model.NotificationEventType_EVENT_DEPLOYMENT_TRIGGERED,
+					Metadata: &model.NotificationEventDeploymentTriggered{
+						Deployment: &model.Deployment{
+							Labels: map[string]string{
+								"team": "",
+							},
+						},
+					},
+				}: true,
+			},
+		},
+		{
+			name: "a label with an empty value can still be ignored explicitly",
+			config: config.NotificationRoute{
+				IgnoreLabels: map[string]string{
+					"team": "",
+				},
+			},
+			matchings: map[model.NotificationEvent]bool{
+				{
+					Type: model.NotificationEventType_EVENT_DEPLOYMENT_TRIGGERED,
+					Metadata: &model.NotificationEventDeploymentTriggered{
+						Deployment: &model.Deployment{
+							Labels: map[string]string{
+								"team": "",
+							},
+						},
+					},
+				}: false,
+			},
+		},
 	}
 
 	for _, tc := range testcases {
