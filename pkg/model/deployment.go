@@ -237,6 +237,7 @@ func (d *Deployment) GetLabelsString() string {
 	for k, v := range d.Labels {
 		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
 	}
+	slices.Sort(labels)
 	return strings.Join(labels, ",")
 }
 

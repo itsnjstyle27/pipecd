@@ -17,6 +17,7 @@ package model
 import (
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 )
@@ -108,6 +109,7 @@ func (a *Application) GetLabelsString() string {
 	for k, v := range a.Labels {
 		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
 	}
+	slices.Sort(labels)
 	return strings.Join(labels, ",")
 }
 

@@ -15,8 +15,6 @@
 package model
 
 import (
-	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -385,7 +383,7 @@ func TestApplication_GetLabelsString(t *testing.T) {
 					"region":  "us-west-1",
 				},
 			},
-			expected: "env=prod,version=v1.0.0,region=us-west-1",
+			expected: "env=prod,region=us-west-1,version=v1.0.0",
 		},
 	}
 
@@ -393,13 +391,10 @@ func TestApplication_GetLabelsString(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := tt.app.GetLabelsString()
-			assert.Equal(t, len(tt.expected), len(result))
-			expectedParts := strings.Split(tt.expected, ",")
-			resultParts := strings.Split(result, ",")
-			sort.Strings(expectedParts)
-			sort.Strings(resultParts)
-			assert.Equal(t, expectedParts, resultParts)
+			// Map iteration order is random, so check it more than once.
+			for range 20 {
+				assert.Equal(t, tt.expected, tt.app.GetLabelsString())
+			}
 		})
 	}
 }
