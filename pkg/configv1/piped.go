@@ -26,6 +26,9 @@ import (
 	"github.com/pipe-cd/pipecd/pkg/model"
 )
 
+// maskedPluginConfig replaces the configuration of a plugin when it is masked.
+var maskedPluginConfig = json.RawMessage(`"` + maskString + `"`)
+
 const (
 	maskString = "******"
 )
@@ -156,8 +159,9 @@ func (s *PipedSpec) Mask() {
 	if s.SecretManagement != nil {
 		s.SecretManagement.Mask()
 	}
-
-	// TODO: Mask plugin configs
+	for i := range s.Plugins {
+		s.Plugins[i].Mask()
+	}
 }
 
 // GetRepositoryMap returns a map of repositories where key is repo id.
@@ -676,6 +680,20 @@ type PipedPlugin struct {
 	Config json.RawMessage `json:"config,omitempty"`
 	// The deploy targets.
 	DeployTargets []PipedDeployTarget `json:"deployTargets,omitempty"`
+}
+
+// Mask masks the configuration of the plugin and of its deploy targets.
+// Each plugin defines its own configuration, so piped cannot tell which fields
+// are confidential and masks the whole value.
+func (p *PipedPlugin) Mask() {
+	if len(p.Config) != 0 {
+		p.Config = maskedPluginConfig
+	}
+	for i := range p.DeployTargets {
+		if len(p.DeployTargets[i].Config) != 0 {
+			p.DeployTargets[i].Config = maskedPluginConfig
+		}
+	}
 }
 
 // PipedDeployTarget defines the deploy target configuration for the piped.

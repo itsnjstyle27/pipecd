@@ -22,6 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/yaml"
 
 	"github.com/pipe-cd/pipecd/pkg/model"
 )
@@ -1101,4 +1102,62 @@ func TestSecretManagementUnmarshalJSON(t *testing.T) {
 			assert.Equal(t, tc.want, &got)
 		})
 	}
+}
+
+func TestPipedConfigMaskPlugins(t *testing.T) {
+	t.Parallel()
+
+	spec := &PipedSpec{
+		Plugins: []PipedPlugin{
+			{
+				Name: "analysis",
+				URL:  "https://example.com/analysis",
+				Port: 7001,
+				Config: json.RawMessage(
+					`{"analysisProviders":[{"name":"dd","type":"DATADOG","config":{"apiKeyData":"plugin-secret"}}]}`,
+				),
+			},
+			{
+				Name: "ecs",
+				URL:  "https://example.com/ecs",
+				Port: 7002,
+				DeployTargets: []PipedDeployTarget{
+					{
+						Name:   "prod",
+						Labels: map[string]string{"env": "prod"},
+						Config: json.RawMessage(`{"region":"us-east-1","credentialsFile":"target-secret"}`),
+					},
+				},
+			},
+			{
+				Name: "wait",
+				URL:  "https://example.com/wait",
+				Port: 7003,
+			},
+		},
+	}
+
+	masked, err := spec.Clone()
+	require.NoError(t, err)
+	masked.Mask()
+
+	// This is what piped reports to the control plane.
+	reported, err := yaml.Marshal(masked)
+	require.NoError(t, err)
+	assert.NotContains(t, string(reported), "plugin-secret")
+	assert.NotContains(t, string(reported), "target-secret")
+
+	// The name, URL, port and labels are still reported.
+	assert.Equal(t, "analysis", masked.Plugins[0].Name)
+	assert.Equal(t, "https://example.com/analysis", masked.Plugins[0].URL)
+	assert.Equal(t, 7001, masked.Plugins[0].Port)
+	assert.Equal(t, "prod", masked.Plugins[1].DeployTargets[0].Name)
+	assert.Equal(t, map[string]string{"env": "prod"}, masked.Plugins[1].DeployTargets[0].Labels)
+
+	// A plugin without configuration stays without it.
+	assert.Empty(t, masked.Plugins[2].Config)
+
+	// The configuration piped itself uses is not changed.
+	assert.Contains(t, string(spec.Plugins[0].Config), "plugin-secret")
+	assert.Contains(t, string(spec.Plugins[1].DeployTargets[0].Config), "target-secret")
 }
