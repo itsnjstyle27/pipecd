@@ -24,6 +24,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/pipe-cd/pipecd/pkg/app/pipectl/client"
 	"github.com/pipe-cd/pipecd/pkg/app/server/service/apiservice"
 	"github.com/pipe-cd/pipecd/pkg/cli"
 	"github.com/pipe-cd/pipecd/pkg/model"
@@ -71,12 +72,9 @@ func (c *list) run(ctx context.Context, _ cli.Input) error {
 		}
 	}
 
-	labels := map[string]string{}
-	for _, label := range c.labels {
-		sp := strings.SplitN(label, ":", 2)
-		if len(sp) == 2 {
-			labels[sp[0]] = sp[1]
-		}
+	labels, err := client.ParseLabels(c.labels)
+	if err != nil {
+		return err
 	}
 
 	cli, err := c.root.clientOptions.NewClient(ctx)

@@ -19,12 +19,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
+	"github.com/pipe-cd/pipecd/pkg/app/pipectl/client"
 	"github.com/pipe-cd/pipecd/pkg/app/server/service/apiservice"
 	"github.com/pipe-cd/pipecd/pkg/cli"
 	"github.com/pipe-cd/pipecd/pkg/model"
@@ -63,12 +63,9 @@ Note: deployment history is not included because the API does not expose a write
 func (c *backup) run(ctx context.Context, input cli.Input) error {
 	input.Logger.Info("Starting control plane backup...")
 
-	labels := map[string]string{}
-	for _, label := range c.labels {
-		sp := strings.SplitN(label, ":", 2)
-		if len(sp) == 2 {
-			labels[sp[0]] = sp[1]
-		}
+	labels, err := client.ParseLabels(c.labels)
+	if err != nil {
+		return err
 	}
 
 	cli, err := c.root.clientOptions.NewClient(ctx)

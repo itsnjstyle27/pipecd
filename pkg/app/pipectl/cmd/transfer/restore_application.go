@@ -19,11 +19,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
+	"github.com/pipe-cd/pipecd/pkg/app/pipectl/client"
 	"github.com/pipe-cd/pipecd/pkg/app/server/service/apiservice"
 	"github.com/pipe-cd/pipecd/pkg/cli"
 	"github.com/pipe-cd/pipecd/pkg/model"
@@ -72,12 +72,9 @@ func (c *restoreApplication) run(ctx context.Context, input cli.Input) error {
 		zap.String("piped-id-mapping-file", c.pipedMappingFile),
 	)
 
-	labels := map[string]string{}
-	for _, label := range c.labels {
-		sp := strings.SplitN(label, ":", 2)
-		if len(sp) == 2 {
-			labels[sp[0]] = sp[1]
-		}
+	labels, err := client.ParseLabels(c.labels)
+	if err != nil {
+		return err
 	}
 
 	data, err := readBackupFile(c.inputFile)
