@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	sdk "github.com/pipe-cd/piped-plugin-sdk-go"
@@ -353,4 +354,27 @@ func mustMarshalJSON(t *testing.T, v any) []byte {
 		t.Fatalf("failed to marshal json: %v", err)
 	}
 	return data
+}
+
+// errorRecordingLogPersister keeps the messages logged with Errorf.
+type errorRecordingLogPersister struct {
+	sdk.StageLogPersister
+	errors []string
+}
+
+func (lp *errorRecordingLogPersister) Errorf(format string, a ...any) {
+	lp.errors = append(lp.errors, fmt.Sprintf(format, a...))
+}
+
+func Test_executeCommand_logsTheError(t *testing.T) {
+	t.Parallel()
+
+	lp := &errorRecordingLogPersister{StageLogPersister: logpersistertest.NewTestLogPersister(t)}
+
+	status := executeCommand("exit 3", nil, sdk.ExecuteStageRequest[struct{}]{
+		TargetDeploymentSource: sdk.DeploymentSource[struct{}]{ApplicationDirectory: t.TempDir()},
+	}, lp)
+
+	assert.Equal(t, sdk.StageStatusFailure, status)
+	assert.Equal(t, []string{"failed to exec command: exit status 3"}, lp.errors)
 }

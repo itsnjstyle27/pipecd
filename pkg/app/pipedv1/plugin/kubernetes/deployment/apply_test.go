@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/pipe-cd/pipecd/pkg/app/pipedv1/plugin/kubernetes/provider"
@@ -280,6 +281,76 @@ data:
 			err := applyManifests(t.Context(), tt.applier, tt.manifests, tt.namespace, lp)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("applyManifests() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_applyManifests_logsTheError(t *testing.T) {
+	t.Parallel()
+
+	manifests := func(annotation string) []provider.Manifest {
+		return mustParseManifests(t, `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+  annotations:
+    `+annotation+`: "enabled"
+data:
+  key: value
+`)
+	}
+
+	tests := []struct {
+		name       string
+		annotation string
+		applier    *mockApplier
+		wantLogs   []string
+	}{
+		{
+			name:       "force replace, then create",
+			annotation: provider.LabelForceSyncReplace,
+			applier: &mockApplier{
+				forceReplaceErr: provider.ErrNotFound,
+				createErr:       errors.New("create error"),
+			},
+			wantLogs: []string{
+				provider.ErrNotFound.Error(),
+				"(create error)",
+			},
+		},
+		{
+			name:       "replace, then create",
+			annotation: provider.LabelSyncReplace,
+			applier: &mockApplier{
+				replaceErr: provider.ErrNotFound,
+				createErr:  errors.New("create error"),
+			},
+			wantLogs: []string{
+				provider.ErrNotFound.Error(),
+				"(create error)",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			lp := new(mockStageLogPersister)
+			if err := applyManifests(t.Context(), tt.applier, manifests(tt.annotation), "", lp); err == nil {
+				t.Fatal("applyManifests() should return an error")
+			}
+
+			logs := strings.Join(lp.logs, "\n")
+			if strings.Contains(logs, "%!") {
+				t.Errorf("the logs have a broken format verb:\n%s", logs)
+			}
+			for _, want := range tt.wantLogs {
+				if !strings.Contains(logs, want) {
+					t.Errorf("the logs should contain %q:\n%s", want, logs)
+				}
 			}
 		})
 	}

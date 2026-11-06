@@ -197,7 +197,7 @@ func executeCommand(commands string, customEnv map[string]string, request sdk.Ex
 	cmd.Stdout = lp
 	cmd.Stderr = lp
 	if err := cmd.Run(); err != nil {
-		lp.Errorf("failed to exec command: %w", err)
+		lp.Errorf("failed to exec command: %v", err)
 		return sdk.StageStatusFailure
 	} else {
 		return sdk.StageStatusSuccess

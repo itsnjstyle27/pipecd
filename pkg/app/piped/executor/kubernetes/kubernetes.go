@@ -249,11 +249,11 @@ func applyManifests(ctx context.Context, ag applierGetter, manifests []provider.
 			// This is because we cannot know whether resource already exists before executing command.
 			err = applier.ForceReplaceManifest(ctx, m)
 			if errors.Is(err, provider.ErrNotFound) {
-				lp.Infof("Specified resource does not exist, so create the resource: %s (%w)", m.Key.ReadableString(), err)
+				lp.Infof("Specified resource does not exist, so create the resource: %s (%v)", m.Key.ReadableString(), err)
 				err = applier.CreateManifest(ctx, m)
 			}
 			if err != nil {
-				lp.Errorf("Failed to forcefully replace or create manifest: %s (%w)", m.Key.ReadableString(), err)
+				lp.Errorf("Failed to forcefully replace or create manifest: %s (%v)", m.Key.ReadableString(), err)
 				return err
 			}
 			lp.Successf("- forcefully replaced or created manifest: %s", m.Key.ReadableString())
@@ -265,11 +265,11 @@ func applyManifests(ctx context.Context, ag applierGetter, manifests []provider.
 			// This is because we cannot know whether resource already exists before executing command.
 			err = applier.ReplaceManifest(ctx, m)
 			if errors.Is(err, provider.ErrNotFound) {
-				lp.Infof("Specified resource does not exist, so create the resource: %s (%w)", m.Key.ReadableString(), err)
+				lp.Infof("Specified resource does not exist, so create the resource: %s (%v)", m.Key.ReadableString(), err)
 				err = applier.CreateManifest(ctx, m)
 			}
 			if err != nil {
-				lp.Errorf("Failed to replace or create manifest: %s (%w)", m.Key.ReadableString(), err)
+				lp.Errorf("Failed to replace or create manifest: %s (%v)", m.Key.ReadableString(), err)
 				return err
 			}
 			lp.Successf("- replaced or created manifest: %s", m.Key.ReadableString())

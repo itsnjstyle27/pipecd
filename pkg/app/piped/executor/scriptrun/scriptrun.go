@@ -105,7 +105,7 @@ func (e *Executor) executeCommand() model.StageStatus {
 	ci := NewContextInfo(e.Deployment, false)
 	ciEnv, err := ci.BuildEnv()
 	if err != nil {
-		e.LogPersister.Errorf("failed to build srcipt run context info: %w", err)
+		e.LogPersister.Errorf("failed to build srcipt run context info: %v", err)
 		return model.StageStatus_STAGE_FAILURE
 	}
 
@@ -124,7 +124,7 @@ func (e *Executor) executeCommand() model.StageStatus {
 	cmd.Stdout = e.LogPersister
 	cmd.Stderr = e.LogPersister
 	if err := cmd.Run(); err != nil {
-		e.LogPersister.Errorf("failed to exec command: %w", err)
+		e.LogPersister.Errorf("failed to exec command: %v", err)
 		return model.StageStatus_STAGE_FAILURE
 	}
 	return model.StageStatus_STAGE_SUCCESS
