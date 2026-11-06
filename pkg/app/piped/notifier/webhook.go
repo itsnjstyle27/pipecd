@@ -88,6 +88,7 @@ func (w *webhook) sendEvent(ctx context.Context, event model.NotificationEvent) 
 		return
 	}
 
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Add(w.config.SignatureKey, signature)
 
 	resp, err := w.httpClient.Do(req)
