@@ -65,6 +65,27 @@ func TestDecode(t *testing.T) {
 			expected: waitApprovalStageOptions{},
 			wantErr:  true,
 		},
+		{
+			name: "as many approvals as approvers",
+			data: json.RawMessage(`{"approvers":["user1@example.com","user2@example.com"],"minApproverNum":2}`),
+			expected: waitApprovalStageOptions{
+				Approvers:      []string{"user1@example.com", "user2@example.com"},
+				MinApproverNum: 2,
+			},
+			wantErr: false,
+		},
+		{
+			name:     "more approvals than approvers",
+			data:     json.RawMessage(`{"approvers":["user1@example.com"],"minApproverNum":2}`),
+			expected: waitApprovalStageOptions{},
+			wantErr:  true,
+		},
+		{
+			name:     "more approvals than distinct approvers",
+			data:     json.RawMessage(`{"approvers":["user1@example.com","user1@example.com"],"minApproverNum":2}`),
+			expected: waitApprovalStageOptions{},
+			wantErr:  true,
+		},
 	}
 
 	for _, tc := range testcases {

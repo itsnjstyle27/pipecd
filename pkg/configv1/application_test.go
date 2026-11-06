@@ -701,3 +701,56 @@ func TestLoadApplication(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateWaitApprovalStageOptions(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name           string
+		approvers      []string
+		minApproverNum int
+		wantErr        bool
+	}{
+		{
+			name:           "as many approvals as approvers",
+			approvers:      []string{"alice", "bob"},
+			minApproverNum: 2,
+			wantErr:        false,
+		},
+		{
+			name:           "more approvals than approvers",
+			approvers:      []string{"alice"},
+			minApproverNum: 2,
+			wantErr:        true,
+		},
+		{
+			name:           "more approvals than distinct approvers",
+			approvers:      []string{"alice", "alice"},
+			minApproverNum: 2,
+			wantErr:        true,
+		},
+		{
+			name:           "any number of approvals without approvers",
+			minApproverNum: 3,
+			wantErr:        false,
+		},
+		{
+			name:           "no approvals",
+			approvers:      []string{"alice"},
+			minApproverNum: 0,
+			wantErr:        true,
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			w := &WaitApprovalStageOptions{
+				Approvers:      tc.approvers,
+				MinApproverNum: tc.minApproverNum,
+			}
+			err := w.Validate()
+			assert.Equal(t, tc.wantErr, err != nil)
+		})
+	}
+}

@@ -17,6 +17,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/creasty/defaults"
 )
@@ -33,6 +34,11 @@ func (o waitApprovalStageOptions) validate() error {
 	}
 	if o.MinApproverNum < 1 {
 		return fmt.Errorf("minApproverNum %d should be greater than 0", o.MinApproverNum)
+	}
+	// Only the listed users can approve, so with more required approvals than
+	// listed users the stage could never finish.
+	if n := len(slices.Compact(slices.Sorted(slices.Values(o.Approvers)))); o.MinApproverNum > n {
+		return fmt.Errorf("minApproverNum %d should not be greater than the number of approvers (%d)", o.MinApproverNum, n)
 	}
 	return nil
 }

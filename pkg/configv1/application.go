@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/pipe-cd/pipecd/pkg/model"
@@ -239,6 +240,11 @@ type WaitApprovalStageOptions struct {
 func (w *WaitApprovalStageOptions) Validate() error {
 	if w.MinApproverNum < 1 {
 		return fmt.Errorf("minApproverNum %d should be greater than 0", w.MinApproverNum)
+	}
+	// Only the listed users can approve, so with more required approvals than
+	// listed users the stage could never finish. No list means anyone can approve.
+	if n := len(slices.Compact(slices.Sorted(slices.Values(w.Approvers)))); n > 0 && w.MinApproverNum > n {
+		return fmt.Errorf("minApproverNum %d should not be greater than the number of approvers (%d)", w.MinApproverNum, n)
 	}
 	return nil
 }

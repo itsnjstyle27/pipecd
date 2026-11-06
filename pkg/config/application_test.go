@@ -79,6 +79,7 @@ func TestHasStage(t *testing.T) {
 func TestValidateWaitApprovalStageOptions(t *testing.T) {
 	testcases := []struct {
 		name           string
+		approvers      []string
 		minApproverNum int
 		wantErr        bool
 	}{
@@ -92,10 +93,34 @@ func TestValidateWaitApprovalStageOptions(t *testing.T) {
 			minApproverNum: -1,
 			wantErr:        true,
 		},
+		{
+			name:           "as many approvals as approvers",
+			approvers:      []string{"alice", "bob"},
+			minApproverNum: 2,
+			wantErr:        false,
+		},
+		{
+			name:           "more approvals than approvers",
+			approvers:      []string{"alice"},
+			minApproverNum: 2,
+			wantErr:        true,
+		},
+		{
+			name:           "more approvals than distinct approvers",
+			approvers:      []string{"alice", "alice"},
+			minApproverNum: 2,
+			wantErr:        true,
+		},
+		{
+			name:           "any number of approvals without approvers",
+			minApproverNum: 3,
+			wantErr:        false,
+		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			w := &WaitApprovalStageOptions{
+				Approvers:      tc.approvers,
 				MinApproverNum: tc.minApproverNum,
 			}
 			err := w.Validate()
