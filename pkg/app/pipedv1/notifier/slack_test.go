@@ -14,7 +14,12 @@
 
 package notifier
 
-import "testing"
+import (
+	"testing"
+	"unicode/utf8"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func Test_getAccountsAsString(t *testing.T) {
 	t.Parallel()
@@ -85,6 +90,58 @@ func Test_getGroupsAsString(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("getGroupsAsString(): got %s, want %s", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestTruncateText(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name string
+		text string
+		max  int
+		want string
+	}{
+		{
+			name: "shorter than max",
+			text: "abc",
+			max:  8,
+			want: "abc",
+		},
+		{
+			name: "exactly max",
+			text: "abcdefgh",
+			max:  8,
+			want: "abcdefgh",
+		},
+		{
+			name: "longer than max",
+			text: "abcdefghi",
+			max:  8,
+			want: "abcdefgh...",
+		},
+		{
+			name: "multi-byte text that fits in max is kept",
+			text: "\u65e5\u672c\u8a9e",
+			max:  8,
+			want: "\u65e5\u672c\u8a9e",
+		},
+		{
+			name: "multi-byte text is cut between characters",
+			text: "\u65e5\u672c\u8a9e\u306e\u30b3\u30df\u30c3\u30c8\u30e1\u30c3\u30bb\u30fc\u30b8",
+			max:  8,
+			want: "\u65e5\u672c\u8a9e\u306e\u30b3\u30df\u30c3\u30c8...",
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := truncateText(tc.text, tc.max)
+			assert.Equal(t, tc.want, got)
+			assert.True(t, utf8.ValidString(got))
 		})
 	}
 }

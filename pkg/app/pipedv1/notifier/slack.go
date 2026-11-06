@@ -421,10 +421,11 @@ func makeSlackDate(unix int64) string {
 
 // nolint:unparam
 func truncateText(text string, max int) string {
-	if len(text) <= max {
+	runes := []rune(text)
+	if len(runes) <= max {
 		return text
 	}
-	return text[:max] + "..."
+	return string(runes[:max]) + "..."
 }
 
 func makeSlackMessage(title, titleLink, text, color string, timestamp int64, fields ...slackField) slackMessage {
